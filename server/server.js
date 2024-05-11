@@ -13,6 +13,7 @@ var io = socketIO(server);
 app.use(express.static(publicPath));
 app.use(favicon(path.join(__dirname, '../favicon.ico')));
 var players = [];
+var FPS = 166;
 
 server.listen(port, function () {
   console.log("Server successfully runned on port http://localhost:" + port); // this will log something to the therminal
@@ -164,4 +165,4 @@ setInterval(() => {
   }
 
   io.emit("updatePack", { updatePack });
-}, 1000 / 60);
+}, 1000 / FPS);
