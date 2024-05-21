@@ -1,9 +1,10 @@
 let socket;
 let myId;
 const players = new Map();
+const skinsPath = 'assets/skins';
+let skin; 
 
 function preload() {
-  // Write code for preloading assets
 }
 
 function setup() {
@@ -16,13 +17,13 @@ function setup() {
   });
 
   socket.on('newPlayer', data => {
-    const player = new Player(data.id, data.name, data.x, data.y);
+    const player = new Player(data.id, data.name, data.x, data.y, data.skinId);
     players.set(data.id, player);
   });
 
   socket.on('initPack', data => {
     data.initPack.forEach(initData => {
-      const player = new Player(initData.id, initData.name, initData.x, initData.y);
+      const player = new Player(initData.id, initData.name, initData.x, initData.y, initData.skinId);
       players.set(initData.id, player);
     });
   });
@@ -59,11 +60,13 @@ function draw() {
 }
 
 class Player {
-  constructor(id, name, x, y) {
+  constructor(id, name, x, y, skinId) {
     this.id = id;
     this.name = name;
     this.location = createVector(x, y);
     this.angle = 0;
+    this.skinId = skinId;
+    this.skin = loadImage(`${skinsPath}/${this.skinId}.png`);
   }
 
   update(data) {
@@ -74,10 +77,45 @@ class Player {
   draw() {
     push();
     translate(this.location.x, this.location.y);
+
+    if (this.skin) {
+      // Draw the image within a circle without rotation
+      imageMode(CENTER);
+      this.drawCircularImage(this.skin, 100);
+    } else {
+      // If skin is not loaded, fill a circle instead
+      fill(255);
+      ellipse(0, 0, 100, 100);
+    }
+
+    // Draw the rotating border or indicator
     rotate(this.angle);
-    fill(255, 0, 0);
+    noFill();
+    stroke(255, 0, 0);
+    strokeWeight(2);
     circle(0, 0, 100);
+
     pop();
+  }
+
+  drawCircularImage(img, diameter) {
+    const radius = diameter / 2;
+    const x = -radius;
+    const y = -radius;
+
+    // Create a mask using p5.js graphics
+    const mask = createGraphics(diameter, diameter);
+    mask.ellipse(radius, radius, diameter, diameter);
+
+    // Resize the image to fit the diameter
+    const resizedImg = createImage(diameter, diameter);
+    resizedImg.copy(img, 0, 0, img.width, img.height, 0, 0, diameter, diameter);
+    resizedImg.mask(mask);
+
+    // Draw the masked, resized image
+    image(resizedImg, 0, 0);
+
+    this.skinLoaded = true; // Set skinLoaded to true once the skin is drawn
   }
 }
 

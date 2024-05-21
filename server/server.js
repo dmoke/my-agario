@@ -1,4 +1,6 @@
+//server.js
 const path = require('path');
+const fs = require('fs');
 const http = require('http');
 const favicon = require('serve-favicon');
 const express = require('express');
@@ -6,12 +8,16 @@ const socketIO = require('socket.io');
 const Victor = require('victor');
 
 const publicPath = path.join(__dirname, '../client');
+const assetsPath = path.join(__dirname, '../assets');
+const skinsPath = path.join(__dirname, '../assets/skins');
+
 const port = process.env.PORT || 3333;
 const app = express();
 const server = http.createServer(app);
 const io = socketIO(server);
 
-app.use(express.static(publicPath));
+app.use(express.static(publicPath)); // Serve client-side files
+app.use('/assets', express.static(assetsPath)); 
 app.use(favicon(path.join(__dirname, '../favicon.ico')));
 
 let players = new Map();
@@ -65,6 +71,7 @@ class Player {
     this.angle = 0;
     this.windowWidth = 0;
     this.windowHeight = 0;
+    this.skinId = Math.floor(Math.random() * fs.readdirSync(skinsPath).length) + 1;
   }
 
   updateInput(data) {
@@ -116,6 +123,7 @@ class Player {
       name: this.name,
       x: this.location.x,
       y: this.location.y,
+      skinId: this.skinId,
     };
   }
 
