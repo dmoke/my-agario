@@ -1,9 +1,10 @@
 let socket;
 let myId;
 const players = new Map();
+const foods = new Map(); // Map to store food items
 const skinsPath = 'assets/skins';
-let skin; 
 const START_MASS = 100;
+
 function preload() {
 }
 
@@ -26,6 +27,11 @@ function setup() {
       const player = new Player(initData.id, initData.name, initData.x, initData.y, initData.skinId, START_MASS);
       players.set(initData.id, player);
     });
+
+    data.foodPack.forEach(foodData => {
+      const food = new Food(foodData.id, foodData.x, foodData.y, foodData.mass);
+      foods.set(foodData.id, food);
+    });
   });
 
   socket.on('updatePack', data => {
@@ -35,6 +41,15 @@ function setup() {
         player.update(updateData);
       }
     });
+  });
+
+  socket.on('newFood', data => {
+    const food = new Food(data.id, data.x, data.y, data.mass);
+    foods.set(data.id, food);
+  });
+
+  socket.on('foodEaten', data => {
+    foods.delete(data.id);
   });
 
   socket.on('someoneLeft', data => {
@@ -56,6 +71,7 @@ function draw() {
   fill(51);
   rect(0, 0, 1000, 1000);
 
+  foods.forEach(food => food.draw()); // Draw all food items
   players.forEach(player => player.draw());
 }
 
@@ -73,6 +89,7 @@ class Player {
   update(data) {
     this.location.set(data.x, data.y);
     this.angle = data.angle;
+    this.mass = data.mass; // Update mass if it changes
   }
 
   draw() {
@@ -107,7 +124,6 @@ class Player {
     textSize(20);
     text(this.mass, 0, +20);
     push();
-
   }
 
   drawCircularImage(img, diameter) {
@@ -128,6 +144,24 @@ class Player {
     image(resizedImg, 0, 0);
 
     this.skinLoaded = true; // Set skinLoaded to true once the skin is drawn
+  }
+}
+
+class Food {
+  constructor(id, x, y, mass) {
+    this.id = id;
+    this.location = createVector(x, y);
+    this.mass = mass;
+    this.color = color(random(255), random(255), random(255)); // Random color for each food item
+  }
+
+  draw() {
+    push();
+    translate(this.location.x, this.location.y);
+    fill(this.color);
+    noStroke();
+    ellipse(0, 0, 10, 10); // Draw food as small circles
+    pop();
   }
 }
 

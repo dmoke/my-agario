@@ -33,9 +33,17 @@ class Food {
     this.location = new Victor(x, y);
     this.mass = FOOD_MASS;
   }
+  getInitPack() {
+    return {
+      id: this.id,
+      x: this.location.x,
+      y: this.location.y,
+      mass: this.mass
+    }
+  }
+
 }
 function spawnFood() {
-  foods = [];
   for (let i = 0; i < FOOD_COUNT; i++) {
     const food = new Food(i, getRandomPosition(1000), getRandomPosition(1000));
     foods.push(food);
@@ -57,7 +65,10 @@ io.on('connection', (socket) => {
     socket.emit('yourId', { id: player.id });
     socket.broadcast.emit('newPlayer', player.getInitPack());
 
-    socket.emit('initPack', { initPack: getAllPlayersInitPack() });
+    socket.emit('initPack', {
+      initPack: getAllPlayersInitPack(),
+      foodPack: getAllFoodInitPack()
+    });
   });
 
   socket.on('inputData', (data) => {
@@ -107,6 +118,17 @@ class Player {
     this.speedUp();
     this.move();
     this.resetAcceleration();
+
+    this.checkFoodCollision();
+  }
+  checkFoodCollision() {
+    foods.forEach((food, index) => {
+      if (this.location.distance(food.location) < FOOD_SIZE + this.mass / 10) {
+        this.mass += food.mass;
+        foods.splice(index, 1);
+        io.emit('foodEaten', { id: food.id });
+      }
+    });
   }
 
   getForceTowardMouse() {
@@ -143,6 +165,7 @@ class Player {
       x: this.location.x,
       y: this.location.y,
       skinId: this.skinId,
+      mass: this.mass,
     };
   }
 
@@ -152,8 +175,13 @@ class Player {
       x: this.location.x,
       y: this.location.y,
       angle: this.angle,
+      mass: this.mass,
     };
   }
+}
+
+function getAllFoodInitPack() {
+  return foods.map(food => food.getInitPack());
 }
 
 function limitVector(v, max) {
@@ -174,3 +202,15 @@ setInterval(() => {
   });
   io.emit('updatePack', { updatePack });
 }, 1000 / FPS);
+
+function getRandomPosition(range) {
+  return Math.random() * range;
+}
+
+setInterval(() => {
+  if (foods.length < FOOD_COUNT) {
+    const newFood = new Food(foods.length, getRandomPosition(1000), getRandomPosition(1000));
+    foods.push(newFood);
+    io.emit('newFood', newFood.getInitPack());
+  }
+}, 1000);
