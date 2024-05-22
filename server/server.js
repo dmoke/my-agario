@@ -17,11 +17,30 @@ const server = http.createServer(app);
 const io = socketIO(server);
 
 app.use(express.static(publicPath)); // Serve client-side files
-app.use('/assets', express.static(assetsPath)); 
+app.use('/assets', express.static(assetsPath));
 app.use(favicon(path.join(__dirname, '../favicon.ico')));
 
 let players = new Map();
-const FPS = 166;
+let foods = [];
+const FPS = 60;
+const FOOD_COUNT = 100;
+const FOOD_SIZE = 5;
+const FOOD_MASS = 10;
+
+class Food {
+  constructor(id, x, y) {
+    this.id = id;
+    this.location = new Victor(x, y);
+    this.mass = FOOD_MASS;
+  }
+}
+function spawnFood() {
+  foods = [];
+  for (let i = 0; i < FOOD_COUNT; i++) {
+    const food = new Food(i, getRandomPosition(1000), getRandomPosition(1000));
+    foods.push(food);
+  }
+}
 
 server.listen(port, () => {
   console.log(`Server running on http://localhost:${port}`);
@@ -65,7 +84,7 @@ class Player {
     this.mouseMaxForce = 0.3;
     this.maxAcceleration = 2;
     this.maxSpeed = 2;
-    this.mass = 2;
+    this.mass = 100;
     this.mouseX = 0;
     this.mouseY = 0;
     this.angle = 0;
@@ -96,7 +115,7 @@ class Player {
   }
 
   addForce(force) {
-    this.force = force.divideScalar(this.mass);
+    this.force = force.divideScalar(this.mass / 100);
   }
 
   accelerate() {

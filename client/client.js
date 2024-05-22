@@ -3,27 +3,27 @@ let myId;
 const players = new Map();
 const skinsPath = 'assets/skins';
 let skin; 
-
+const START_MASS = 100;
 function preload() {
 }
 
 function setup() {
   socket = io();
 
-  socket.emit('imReady', { name: 'Devlogerio' });
+  socket.emit('imReady', { name: 'test' });
 
   socket.on('yourId', data => {
     myId = data.id;
   });
 
   socket.on('newPlayer', data => {
-    const player = new Player(data.id, data.name, data.x, data.y, data.skinId);
+    const player = new Player(data.id, data.name, data.x, data.y, data.skinId, START_MASS);
     players.set(data.id, player);
   });
 
   socket.on('initPack', data => {
     data.initPack.forEach(initData => {
-      const player = new Player(initData.id, initData.name, initData.x, initData.y, initData.skinId);
+      const player = new Player(initData.id, initData.name, initData.x, initData.y, initData.skinId, START_MASS);
       players.set(initData.id, player);
     });
   });
@@ -60,12 +60,13 @@ function draw() {
 }
 
 class Player {
-  constructor(id, name, x, y, skinId) {
+  constructor(id, name, x, y, skinId, mass) {
     this.id = id;
     this.name = name;
     this.location = createVector(x, y);
     this.angle = 0;
     this.skinId = skinId;
+    this.mass = mass;
     this.skin = loadImage(`${skinsPath}/${this.skinId}.png`);
   }
 
@@ -96,6 +97,17 @@ class Player {
     circle(0, 0, 100);
 
     pop();
+    translate(this.location.x, this.location.y); // Adjust position above the circle
+    textAlign(CENTER, CENTER);
+    textSize(30);
+    fill(255);
+    stroke(0);
+    strokeWeight(1);
+    text(this.name, 0, 0);
+    textSize(20);
+    text(this.mass, 0, +20);
+    push();
+
   }
 
   drawCircularImage(img, diameter) {
